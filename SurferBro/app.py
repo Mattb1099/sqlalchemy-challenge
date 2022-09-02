@@ -28,6 +28,8 @@ Keys = Base.classes.keys
 Station = Base.classes.station
 Measurement = Base.classes.measurement
 
+a_year_ago = dt.date(2017, 8, 23) - dt.timedelta(days=365)
+
 # 2. Create an app, being sure to pass __name__
 app = Flask(__name__)
 
@@ -94,7 +96,7 @@ def tobs():
     results = session.query(Measurement.tobs).\
                         filter(Measurement.station == 'USC00519281').\
                         filter(Measurement.date >= a_year_ago).\
-                        order_by(Measurement.date.desc()).all()
+                        order_by(Measurement.date).all()
 
     session.close()
 
@@ -104,13 +106,14 @@ def tobs():
     return jsonify(all_tobs) 
 
 @app.route("/api/v1.0/<start>")
-def start():
+def start(start):
+    print(start)
     print("Server received request for 'start' page...")
     session = Session(engine)
     # Query all passengers
-    
-    results = session.query(Measurement).filter(Measurement.date < a_year_ago).\
-                        order_by(Measurement.date.desc()).all()
+    print(start)
+    results = session.query(Measurement.tobs, Measurement.date).filter(Measurement.date > start).\
+                        order_by(Measurement.date).all()
 
     session.close()
 
@@ -120,13 +123,14 @@ def start():
     return jsonify(temp_end) 
 
 @app.route("/api/v1.0/<start>/<end>")
-def end():
+def end(start, end):
     print("Server received request for 'end' page...")
     session = Session(engine)
     # Query all passengers
     
-    results = session.query(Measurement).filter(Measurement.date >= a_year_ago).\
-                        order_by(Measurement.date.desc()).all()
+    results = session.query(Measurement.tobs, Measurement.date).filter(Measurement.date >= start).\
+                        filter(Measurement.date <= end).\
+                        order_by(Measurement.date).all()
 
     session.close()
 
