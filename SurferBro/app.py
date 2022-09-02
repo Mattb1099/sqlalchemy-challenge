@@ -28,6 +28,8 @@ Keys = Base.classes.keys
 Station = Base.classes.station
 Measurement = Base.classes.measurement
 
+a_year_ago = dt.date(2017, 8, 23) - dt.timedelta(days=365)
+
 # 2. Create an app, being sure to pass __name__
 app = Flask(__name__)
 
@@ -45,7 +47,7 @@ def home():
         f"/api/v1.0/<start>/<end>"
     )
 
-# 4. Define what to do when a user hits the /about route
+#percipitation link
 @app.route("/api/v1.0/precipitation")
 def percipitation():
     print("Server received request for 'percipitation' page...")
@@ -54,83 +56,85 @@ def percipitation():
     session = Session(engine)
 
     """Return a list of all passenger names"""
-    # Query all passengers
+    
     results = session.query(Measurement.date, Measurement.prcp).all()
 
     session.close()
 
-    # Convert list of tuples into normal list
+    
     all_perc = list(np.ravel(results))
 
     return jsonify(all_perc)
 
     
-
+#stations link
 @app.route("/api/v1.0/stations")
 def stations():
     print("Server received request for 'stations' page...")
     session = Session(engine)
 
     """Return a list of all passenger names"""
-    # Query all passengers
+    
     count_stat = func.count(Measurement.station).label('count')
     results = session.query(Measurement.station, count_stat).all()
 
     session.close()
 
-    # Convert list of tuples into normal list
+    
     all_stat = list(np.ravel(results))
 
     return jsonify(all_stat)
 
-
+#tobs link
 @app.route("/api/v1.0/tobs")
 def tobs():
     print("Server received request for 'tobs' page...")
     """Return a list of all passenger names"""
     session = Session(engine)
-    # Query all passengers
+   
     
     results = session.query(Measurement.tobs).\
                         filter(Measurement.station == 'USC00519281').\
                         filter(Measurement.date >= a_year_ago).\
-                        order_by(Measurement.date.desc()).all()
+                        order_by(Measurement.date).all()
 
     session.close()
 
-    # Convert list of tuples into normal list
+    
     all_tobs = list(np.ravel(results))
 
     return jsonify(all_tobs) 
-
+#start link
 @app.route("/api/v1.0/<start>")
-def start():
+def start(start):
+    #print(start)
     print("Server received request for 'start' page...")
     session = Session(engine)
-    # Query all passengers
     
-    results = session.query(Measurement).filter(Measurement.date < a_year_ago).\
-                        order_by(Measurement.date.desc()).all()
+    #print(start)
+    results = session.query(Measurement.tobs, Measurement.date).filter(Measurement.date > start).\
+                        order_by(Measurement.date).all()
 
     session.close()
 
-    # Convert list of tuples into normal list
+    
     temp_end = list(np.ravel(results))
 
     return jsonify(temp_end) 
-
+#start and end link
 @app.route("/api/v1.0/<start>/<end>")
-def end():
+def end(start, end):
     print("Server received request for 'end' page...")
     session = Session(engine)
-    # Query all passengers
     
-    results = session.query(Measurement).filter(Measurement.date >= a_year_ago).\
-                        order_by(Measurement.date.desc()).all()
+    
+    results = session.query(Measurement.tobs, Measurement.date).filter(Measurement.date >= start).\
+                        filter(Measurement.date <= end).\
+                        order_by(Measurement.date).all()
 
     session.close()
 
-    # Convert list of tuples into normal list
+    
     temp_end = list(np.ravel(results))
 
     return jsonify(temp_end) 
